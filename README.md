@@ -41,10 +41,8 @@ for s in erwin-model-export wxdi-metadata-import erwin-wxdi-governance; do ln -s
 
 ## Tested
 
-On eMovies (EMOVIES 15.2: 9 tables, 75 columns, 13 foreign keys, 2 views), SQL Server 2022, wxdi SaaS (ca-tor), November 2026:
+On eMovies (EMOVIES 15.2: 9 tables, 75 columns, 13 foreign keys, 2 views), AWS RDS Postgres , wxdi SaaS (ca-tor), November 2026:
 
 - **Skill 1:** both SQL scripts, the viewer, and `metadata.json` (5 categories, 66 terms, 123 term assignments, 30 classification suggestions).
 - **Skill 2:** deployed into SQL Server and created a read-only login (proved read-only); the metadata import gave 11 assets with every primary key, all 13 foreign keys and every description.
 - **Skill 3:** 66 terms published, 11 assets in the catalog, 123 term assignments and 48 column classifications.
-
-Lineage: Postgres view lineage worked earlier. On SQL Server the lineage scan completes, but view-to-table edges don't appear yet; see skill 2's notes.
