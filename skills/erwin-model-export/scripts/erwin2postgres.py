@@ -82,6 +82,25 @@ MSSQL_TYPES = [
 ]
 MSSQL_MAX_IDENT = 128
 
+# Databricks (--dialect databricks): Unity Catalog Delta tables. Sized varchar and char are kept (Delta checks the
+# length on write); unsized ones become string.
+DBX_TYPES = [
+    (r'^(LARGE BINARY|BLOB|IMAGE|BYTEA|VARBINARY.*|BINARY.*)$', 'binary'),
+    (r'^(DATETIME.*|TIMESTAMP.*|SMALLDATETIME)$', 'timestamp'),
+    (r'^(N?VARCHAR2?|NCHAR VARYING|CHARACTER VARYING|N?CHAR|CHARACTER)$', 'string'),
+    (r'^(N?VARCHAR2?|NCHAR VARYING|CHARACTER VARYING)\b', 'varchar'),
+    (r'^(NCHAR|CHARACTER)\b', 'char'),
+    (r'^(NUMBER|NUMERIC|DECIMAL|MONEY)$', 'decimal(19,4)'),
+    (r'^(NUMBER|NUMERIC)\b', 'decimal'),
+    (r'^(LONG VARCHAR|CLOB|N?TEXT|MEMO|STRING)$', 'string'),
+    (r'^(INTEGER|INT)$', 'int'),
+    (r'^(BIT|BOOL(EAN)?)$', 'boolean'),
+    (r'^(DOUBLE|DOUBLE PRECISION|FLOAT)$', 'double'),
+    (r'^REAL$', 'float'),
+    (r'^BYTE$', 'tinyint'),
+]
+DBX_MAX_IDENT = 255
+
 
 def expand(macro, values):
     """Expand the subset of erwin naming macros used for inherited attribute names."""
@@ -135,6 +154,17 @@ def mssql_type(dt):
     if m and int(m.group(2)) > 8000:  # SQL Server's largest declared length
         return m.group(1) + '(max)'
     return dt
+
+
+def dbx_type(dt):
+    if not dt:
+        return 'string'
+    dt = re.sub(r'\(\s*\)', '', dt.strip())
+    for pat, repl in DBX_TYPES:
+        if re.match(pat, dt, re.I):
+            dt = re.sub(pat, repl, dt, flags=re.I)
+            break
+    return dt.lower()
 
 
 def qi(ident):
@@ -429,6 +459,8 @@ def build_views(model, entities, col_by_attr):
 def ddl(m, schema, dialect='postgres'):
     if dialect == 'sqlserver':
         return ddl_sqlserver(m, schema)
+    if dialect == 'databricks':
+        return ddl_databricks(m, schema)
     s = qi(schema)
     out = [f'-- Generated from erwin model "{m["model"]}" by erwin2postgres.py',
            '-- Runs in one transaction: if any statement fails, nothing is created.',
@@ -563,6 +595,86 @@ def ddl_sqlserver(m, schema):
             if c['definition']:
                 out.append(describe(c['definition'], 'VIEW', v['name'], c['column']))
     out += ['', 'COMMIT TRANSACTION;']
+    return '\n'.join(out) + '\n'
+
+
+def ddl_databricks(m, schema):
+    """The same objects as ddl(), as Databricks SQL for Unity Catalog. Databricks has no multi-statement
+    transactions, so run it into an empty schema. Primary and foreign keys are informational (not enforced) and
+    Databricks has no UNIQUE constraint or foreign keys to an alternate key: those stay as comments.
+    Definitions become COMMENT clauses."""
+    bq = lambda ident: '`' + ident.replace('`', '``') + '`'
+    # Spark SQL escapes with backslashes; two adjacent quotes would concatenate two literals instead
+    lit = lambda text: "'" + text.replace('\\', '\\\\').replace("'", "\\'") + "'"
+    s = bq(schema)
+
+    def backtick(sql):
+        """View expressions are built with Postgres quoting ("col"); Databricks reads "..." as a string."""
+        parts = re.split(r"('(?:[^']|'')*')", sql)
+        return ''.join(p if i % 2 else re.sub(r'"((?:[^"]|"")+)"', lambda x: bq(x.group(1).replace('""', '"')), p)
+                       for i, p in enumerate(parts))
+
+    out = [f'-- Generated from erwin model "{m["model"]}" by erwin2postgres.py --dialect databricks',
+           '-- Databricks SQL for Unity Catalog. There are no multi-statement transactions: run it into an empty',
+           '-- schema, and drop the schema to start again. Pick the catalog first, e.g.:',
+           '-- USE CATALOG main;', '', f'CREATE SCHEMA IF NOT EXISTS {s};', '']
+    pk_of = {}
+    for e in m['entities']:
+        t = f'{s}.{bq(e["table"])}'
+        pk = [c['column'] for c in e['columns'] if c['primary_key']]
+        pk_of[e['table']] = sorted(pk)
+        lines = []
+        for c in e['columns']:
+            line = f'    {bq(c["column"])} {dbx_type(c["datatype"])}{" NOT NULL" if c["primary_key"] else ""}'
+            if c['definition']:
+                line += f' COMMENT {lit(c["definition"])}'
+            lines.append(line)
+        if pk:
+            name = snake(f'pk_{e["table"]}')[:DBX_MAX_IDENT]
+            lines.append(f'    CONSTRAINT {bq(name)} PRIMARY KEY ({", ".join(map(bq, pk))})')
+        ddl_t = f'CREATE TABLE {t} (\n' + ',\n'.join(lines) + '\n)'
+        if e['definition']:
+            ddl_t += f'\nCOMMENT {lit(e["definition"])}'
+        for k in e['keys']:
+            if k['type'].startswith('AK') and k['columns'] and sorted(k['columns']) != sorted(pk):
+                out.append(f'-- erwin alternate key {k["type"]} on {e["table"]} ({", ".join(k["columns"])}): '
+                           'Databricks has no UNIQUE constraint')
+        out.append(ddl_t + ';')
+        out.append('')
+    for r in m['relationships']:
+        if not r['child_columns']:
+            continue
+        cols = f'{r["child"]} ({", ".join(r["child_columns"])}) -> {r["parent"]} ({", ".join(r["parent_columns"])})'
+        if sorted(r['parent_columns']) != pk_of.get(r['parent']):
+            out.append(f'-- erwin relationship {r["name"]} {cols}: references an alternate key, '
+                       'which a Databricks foreign key cannot')
+            continue
+        name = snake(f'fk_{r["id"]}_{r["child"]}_{r["parent"]}')[:DBX_MAX_IDENT]
+        out.append(f'ALTER TABLE {s}.{bq(r["child"])} ADD CONSTRAINT {bq(name)} '
+                   f'FOREIGN KEY ({", ".join(map(bq, r["child_columns"]))}) '
+                   f'REFERENCES {s}.{bq(r["parent"])} ({", ".join(map(bq, r["parent_columns"]))});')
+    for v in m['views']:
+        out.append('')
+        out.append(f'-- erwin view {v["view"]}')
+        for n in v['notes']:
+            out.append(f'-- {n}')
+        if not v['sources'] or not v['columns']:
+            continue
+        first = v['sources'][0]
+        names = ',\n'.join(f'    {bq(c["column"])}' + (f' COMMENT {lit(c["definition"])}' if c['definition'] else '')
+                           for c in v['columns'])
+        sql = [f'CREATE VIEW {s}.{bq(v["name"])} (\n{names}\n)']
+        if v['definition']:
+            sql.append(f'COMMENT {lit(v["definition"])}')
+        sql += ['AS SELECT', ',\n'.join(f'    {backtick(c["sql"])}' for c in v['columns']),
+                f'FROM {s}.{bq(first["table"])} {first["alias"]}']
+        for j in v['joins']:
+            src = f'{s}.{bq(j["source"]["table"])} {j["source"]["alias"]}'
+            if j['on']:
+                sql.append(f'JOIN {src} ON ' + ' AND '.join(f'{a}.{bq(ac)} = {b}.{bq(bc)}' for a, ac, b, bc in j['on']))
+            else:
+                sql.append(f'CROSS JOIN {src}')
+        out.append('\n'.join(sql) + ';')
     return '\n'.join(out) + '\n'
 
 
@@ -857,8 +969,8 @@ def main():
     ap.add_argument('model', help='path to the .erwin file')
     ap.add_argument('--schema', help='Postgres schema to create (default: model file name in snake_case)')
     ap.add_argument('--out', help='SQL file to write (default: <schema>.<dialect>.sql next to the model)')
-    ap.add_argument('--dialect', choices=['postgres', 'sqlserver'], default='postgres',
-                    help='SQL to write: PostgreSQL (default) or SQL Server T-SQL')
+    ap.add_argument('--dialect', choices=['postgres', 'sqlserver', 'databricks'], default='postgres',
+                    help='SQL to write: PostgreSQL (default), SQL Server T-SQL or Databricks SQL (Unity Catalog)')
     ap.add_argument('--metadata', metavar='DIR', help='also write model.json and tables/columns/relationships CSVs here')
     ap.add_argument('--glossary', metavar='DIR',
                     help='also write governance files for a catalog: glossary.csv (business terms + categories), '

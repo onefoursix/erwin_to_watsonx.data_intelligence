@@ -24,7 +24,7 @@ Ask the user for the **name of the model** if they haven't given it: the name pe
 
 If the name isn't in the table, look in `~/Documents/My Models/` for a matching `.erwin` file, and ask for the path if there is none. Older `.er1` files and XML exports must be re-saved as `.erwin` from erwin first. When you publish a new model's viewer, add a row here.
 
-Also settle the **schema** (default: the name in snake case, `eMovies` → `emovies`) and the **SQL dialect** (`postgres`, `sqlserver`, or `both`, the default). Ask which database the user will create the tables in; if they don't know yet, write both.
+Also settle the **schema** (default: the name in snake case, `eMovies` → `emovies`) and the **SQL dialect** (`postgres`, `sqlserver`, `databricks`, `both` = postgres + sqlserver, the default, or `all`). Ask which database the user will create the tables in; if they don't know yet, write both.
 
 ## 2. Export
 
@@ -38,6 +38,7 @@ It writes into `work/<schema>/` in the project home (the folder with `.env` and 
 |---|---|
 | `<schema>.metadata.json` | Everything in the model, in one file: tables with columns, data types, keys, definitions; relationships; views with their sources, joins and expressions; domains; and `glossary`: the subject-area categories and business terms in wxdi's glossary import format, the term for every table, column and view column, classification suggestions, valid-value lists and where they're used, and user-defined properties such as Data Steward |
 | `<schema>.postgres.sql`, `<schema>.sqlserver.sql` | `CREATE SCHEMA`, tables, primary and alternate keys, foreign keys, the erwin definitions as table and column descriptions, and views. Each script is one transaction: if anything fails, nothing is created |
+| `<schema>.databricks.sql` | The same for Databricks Unity Catalog: backtick identifiers, Delta types, definitions as `COMMENT` clauses, informational (not enforced) primary and foreign keys. Databricks has no UNIQUE constraint and no foreign key to an alternate key, so those stay as comments; there are no transactions, so run it into an empty schema after `USE CATALOG` |
 | `<Name>.diagram.html` | The viewer page |
 
 The command prints a one-line summary per output and the parser's review notes. Pass the notes on (for example: an attribute name used with two different definitions, where the first one was kept).

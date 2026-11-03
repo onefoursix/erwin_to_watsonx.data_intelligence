@@ -3,7 +3,7 @@
 file, and SQL scripts that create its tables, keys and views.
 
 Usage:
-    export_model.py MODEL.erwin --name NAME [--schema SCHEMA] [--dialect postgres|sqlserver|both]
+    export_model.py MODEL.erwin --name NAME [--schema SCHEMA] [--dialect postgres|sqlserver|databricks|both|all]
                     [--out-dir DIR] [--title TITLE] [--select TABLE]
 
 Writes into DIR (default: work/<schema>/ in the project home, the folder the other erwin skills read):
@@ -69,7 +69,8 @@ def main():
     ap.add_argument('model', help='path to the .erwin file')
     ap.add_argument('--name', required=True, help='the model name, e.g. eMovies (root category and catalog name)')
     ap.add_argument('--schema', help='database schema for the SQL (default: the name in snake_case)')
-    ap.add_argument('--dialect', choices=['postgres', 'sqlserver', 'both'], default='both')
+    ap.add_argument('--dialect', choices=['postgres', 'sqlserver', 'databricks', 'both', 'all'], default='both',
+                    help='both = postgres + sqlserver; all adds databricks')
     ap.add_argument('--out-dir', help='default: work/<schema>/ in the project home')
     ap.add_argument('--title', help='viewer page title (default: "<name> Data Model")')
     ap.add_argument('--select', help='table open in the viewer when it loads')
@@ -82,7 +83,7 @@ def main():
     out = os.path.abspath(os.path.expanduser(a.out_dir)) if a.out_dir else os.path.join(home(), 'work', schema)
     os.makedirs(out, exist_ok=True)
     parser = [sys.executable, '-I', os.path.join(HERE, 'erwin2postgres.py'), model, '--schema', schema]
-    dialects = ['postgres', 'sqlserver'] if a.dialect == 'both' else [a.dialect]
+    dialects = {'both': ['postgres', 'sqlserver'], 'all': ['postgres', 'sqlserver', 'databricks']}.get(a.dialect, [a.dialect])
 
     sql = {}
     for d in dialects:
