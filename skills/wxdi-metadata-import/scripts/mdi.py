@@ -55,7 +55,7 @@ class Db:
         self.kind = kind
         if kind == 'postgres':
             self.host, self.port = setting('postgres_host'), setting('postgres_port', default='5432')
-            self.database = setting('postgres_database', default='postgres')
+            self.database = setting('postgres_database', 'postgres_db', default='postgres')
             self.user, self.password = setting('postgres_user'), setting('postgres_password')
             self.sslmode = setting('postgres_sslmode', default='require')
             self.type_name = 'postgresql'
