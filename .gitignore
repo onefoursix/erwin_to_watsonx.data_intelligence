@@ -11,3 +11,5 @@ venv/*
 .env
 
 
+work/
+*.skill

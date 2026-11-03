@@ -1,0 +1,6 @@
+{
+ "store": [40, 40], "movie_store": [400, 40], "movie": [760, 40],
+ "employee": [40, 330], "movie_rental_record": [400, 330], "movie_copy": [760, 370],
+ "payment": [400, 690], "customer": [760, 560], "customer_credit": [760, 800],
+ "customer_invoice": [1120, 40], "overdue_notice": [1120, 290]
+}

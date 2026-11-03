@@ -1,0 +1,420 @@
+<title>__TITLE__</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: modeling-tool sheet. Toolbar of facts and filters, the IE-notation diagram as the canvas, an inspector beside it for the selected table or view. */
+:root{
+  --bg:#eef2f0; --sheet:#fbfcfb; --surface:#ffffff; --ink:#17201d; --muted:#5a6863; --line:#c6d1cc; --grid:#e1e8e4;
+  --accent:#0d6656; --accent-soft:#d6ebe5; --hdr:#e4ede9;
+  --spi:#b8322f; --pii:#b86e0b; --pi:#2d63a8; --review:#808a86;
+  --a1:#8a5d00; --a2:#2d63a8; --a3:#94386a; --a4:#2a7346; --a5:#6a4fc2; --a6:#a8442d; --a7:#2a7a80; --a8:#5f6b1f;
+  --display:"IBM Plex Sans Condensed","Arial Narrow",Arial,sans-serif;
+  --body:"IBM Plex Sans",-apple-system,"Segoe UI",Arial,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#111715; --sheet:#151c1a; --surface:#1c2522; --ink:#e3ebe7; --muted:#97a6a0; --line:#34433e; --grid:#1d2724;
+  --accent:#4fc2a8; --accent-soft:#1d3a33; --hdr:#22302b;
+  --spi:#ef6f69; --pii:#e3a24a; --pi:#77a6e6; --review:#8d9893;
+  --a1:#d9a640; --a2:#77a6e6; --a3:#d57fae; --a4:#6cc28c; --a5:#a993ee; --a6:#e8896f; --a7:#69c3c9; --a8:#b8c75a; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#111715; --sheet:#151c1a; --surface:#1c2522; --ink:#e3ebe7; --muted:#97a6a0; --line:#34433e; --grid:#1d2724;
+  --accent:#4fc2a8; --accent-soft:#1d3a33; --hdr:#22302b;
+  --spi:#ef6f69; --pii:#e3a24a; --pi:#77a6e6; --review:#8d9893;
+  --a1:#d9a640; --a2:#77a6e6; --a3:#d57fae; --a4:#6cc28c; --a5:#a993ee; --a6:#e8896f; --a7:#69c3c9; --a8:#b8c75a; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:14px;line-height:1.45}
+.wrap{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 28px;max-width:1700px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px 24px}
+h1{font-family:var(--display);font-weight:600;font-size:26px;margin:0;letter-spacing:.01em;text-wrap:balance}
+h1 small{font-family:var(--mono);font-weight:400;font-size:13px;color:var(--muted);margin-left:8px}
+.facts{display:flex;flex-wrap:wrap;gap:6px 18px;margin:0;padding:0;list-style:none;font-size:13px;color:var(--muted)}
+.facts b{color:var(--ink);font-variant-numeric:tabular-nums;font-weight:600}
+.bar{display:flex;flex-wrap:wrap;gap:10px 22px;align-items:center}
+.group{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.lbl{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-right:2px}
+button.chip{font:inherit;font-size:12.5px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:3px 11px;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+button.chip[aria-pressed="true"]{background:var(--ink);color:var(--sheet);border-color:var(--ink)}
+button.chip:focus-visible,.zoom button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.sw{width:9px;height:9px;border-radius:2px;display:inline-block}
+.legend{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:12px;color:var(--muted);align-items:center}
+.legend span{display:inline-flex;align-items:center;gap:5px}
+.dot{width:8px;height:8px;border-radius:50%;display:inline-block}
+.main{display:grid;grid-template-columns:minmax(0,1fr) 440px;gap:14px;align-items:start}
+@media (max-width:1100px){.main{grid-template-columns:minmax(0,1fr)}}
+.canvas{background:var(--sheet);border:1px solid var(--line);border-radius:6px;position:relative;min-width:0}
+.scroller{overflow:auto;max-height:calc(100vh - 170px);min-height:420px}
+.zoom{position:absolute;right:10px;top:10px;display:flex;gap:4px;z-index:2}
+.zoom button{font:inherit;font-size:12px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:4px;padding:3px 9px;cursor:pointer}
+svg{display:block}
+svg text{font-family:var(--body)}
+.ent rect.box{fill:var(--surface);stroke:var(--line);stroke-width:1.2}
+.ent rect.hd{fill:var(--hdr)}
+.ent .title{font-family:var(--display);font-weight:600;font-size:14px;fill:var(--ink)}
+.ent .meta{font-size:10.5px;fill:var(--muted)}
+.ent .col{font-size:12px;fill:var(--ink)}
+.ent .col.pk{font-weight:600}
+.ent .typ{font-family:var(--mono);font-size:10.5px;fill:var(--muted)}
+.ent .key{font-family:var(--mono);font-size:9.5px;fill:var(--accent);font-weight:500}
+.ent .vv{font-family:var(--mono);font-size:9px;fill:var(--accent)}
+.ent .div{stroke:var(--line)}
+.ent{cursor:pointer;transition:opacity .15s}
+.ent:hover rect.box{stroke:var(--muted)}
+.ent.sel rect.box{stroke:var(--accent);stroke-width:2.4}
+.ent.view rect.box{stroke-dasharray:5 3}
+.ent .row:hover rect{fill:var(--accent-soft)}
+.ent .row rect{fill:transparent}
+.ent .row.hl rect{fill:var(--accent-soft)}
+.dim{opacity:.18}
+.edge path.ln{fill:none;stroke:var(--muted);stroke-width:1.3}
+.edge.nonid path.ln{stroke-dasharray:5 4}
+.edge path.cf{fill:none;stroke:var(--muted);stroke-width:1.3}
+.edge.hot path{stroke:var(--accent);stroke-width:2}
+.edge text{font-size:10.5px;fill:var(--muted);paint-order:stroke;stroke:var(--sheet);stroke-width:4px;stroke-linejoin:round}
+.edge.hot text{fill:var(--accent);font-weight:600}
+.edge.src path.ln{stroke:var(--accent);stroke-dasharray:2 4}
+.areaTag{font-size:9.5px;font-weight:600;letter-spacing:.04em}
+aside{background:var(--surface);border:1px solid var(--line);border-radius:6px;min-width:0;max-height:calc(100vh - 170px);overflow:auto}
+@media (max-width:1100px){aside{max-height:none}.scroller{max-height:70vh}}
+.ins{padding:16px 18px;display:flex;flex-direction:column;gap:14px}
+.ins h2{font-family:var(--display);font-size:21px;margin:0;font-weight:600;display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px}
+.ins h2 code{font-family:var(--mono);font-size:12px;color:var(--muted);font-weight:400}
+.ins h3{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:0 0 6px;font-weight:600}
+.defn{margin:0;font-size:14px}
+.empty{color:var(--muted);font-style:italic}
+dl.kv{display:grid;grid-template-columns:auto 1fr;gap:3px 14px;margin:0;font-size:13px}
+dl.kv dt{color:var(--muted)} dl.kv dd{margin:0}
+.tags{display:flex;flex-wrap:wrap;gap:5px}
+.tag{font-size:11.5px;border-radius:3px;padding:1px 7px;border:1px solid currentColor;font-weight:500}
+ul.plain{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px;font-size:13px}
+.mono{font-family:var(--mono);font-size:12px}
+a.jump{color:var(--accent);cursor:pointer;text-decoration:underline;text-underline-offset:2px}
+.cols{display:flex;flex-direction:column;border-top:1px solid var(--line)}
+.c{border-bottom:1px solid var(--line);padding:8px 2px;display:grid;grid-template-columns:1fr auto;gap:2px 10px;scroll-margin:60px}
+.c.hl{background:var(--accent-soft)}
+.c .nm{font-weight:600;font-size:13px;display:flex;flex-wrap:wrap;gap:4px 8px;align-items:center;min-width:0;overflow-wrap:anywhere}
+.c .ty{font-family:var(--mono);font-size:11.5px;color:var(--muted);text-align:right}
+.c .sub{grid-column:1/-1;font-size:12.5px;color:var(--muted);display:flex;flex-direction:column;gap:3px}
+.c .sub .d{color:var(--ink)}
+.k{font-family:var(--mono);font-size:10px;font-weight:500;color:var(--accent);border:1px solid var(--accent);border-radius:3px;padding:0 4px}
+.cls{display:inline-flex;align-items:center;gap:5px;font-size:12px}
+table.vvt{border-collapse:collapse;font-size:12px;margin-top:3px}
+table.vvt td{padding:1px 10px 1px 0;color:var(--ink)} table.vvt td:first-child{font-family:var(--mono);color:var(--accent)}
+pre.sql{font-family:var(--mono);font-size:11.5px;background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:8px 10px;margin:0;overflow-x:auto;white-space:pre}
+.note{font-size:12px;color:var(--muted);margin:0}
+@media (prefers-reduced-motion: reduce){.ent{transition:none}}
+</style>
+
+<div class="wrap">
+  <header>
+    <div>
+      <h1><span id="mtitle"></span> <small id="mname"></small></h1>
+      <ul class="facts" id="facts"></ul>
+    </div>
+    <div class="legend" aria-label="Legend">
+      <span><span class="dot" style="background:var(--spi)"></span>Sensitive personal</span>
+      <span><span class="dot" style="background:var(--pii)"></span>Personally identifiable</span>
+      <span><span class="dot" style="background:var(--pi)"></span>Personal</span>
+      <span><span class="dot" style="background:none;border:1.5px solid var(--review)"></span>Needs review</span>
+      <span><svg width="34" height="10"><path d="M0 5H34" stroke="var(--muted)" stroke-width="1.3"/></svg>identifying</span>
+      <span><svg width="34" height="10"><path d="M0 5H34" stroke="var(--muted)" stroke-width="1.3" stroke-dasharray="5 4"/></svg>non-identifying</span>
+    </div>
+  </header>
+  <div class="bar">
+    <div class="group" role="group" aria-label="Subject area"><span class="lbl">Subject area</span><span id="areas" class="group"></span></div>
+    <div class="group" role="group" aria-label="Highlight"><span class="lbl">Highlight</span><span id="hls" class="group"></span></div>
+  </div>
+  <div class="main">
+    <div class="canvas">
+      <div class="zoom"><button id="zfit" type="button">Fit</button><button id="z100" type="button">100%</button></div>
+      <div class="scroller" id="scroller"><svg id="dg" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Entity-relationship diagram"></svg></div>
+    </div>
+    <aside id="ins" aria-live="polite"></aside>
+  </div>
+</div>
+
+<script>
+const D = __DATA__;
+const NS = "http://www.w3.org/2000/svg";
+const W = 250, HDR = 46, ROW = 19;
+const POS = D.layout;
+const AREA_VAR = {}; D.subject_areas.forEach((a,i) => AREA_VAR[a] = "--a"+(i%8+1));
+const CLS_VAR = {"Sensitive Personal Information":"--spi","Personally Identifiable Information":"--pii","Personal Information":"--pi"};
+const css = v => `var(${v})`;
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const el = (tag, attrs={}, parent) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; };
+
+const byName = {}; D.tables.forEach(t => { t.kind = "table"; byName[t.name] = t; });
+D.views.forEach(v => { v.kind = "view"; byName[v.name] = v; });
+const nCols = D.tables.reduce((a,t)=>a+t.cols.length,0);
+const terms = new Set(); D.tables.forEach(t => { if (t.term) terms.add(t.term); t.cols.forEach(c => c.term && terms.add(c.term)); });
+const nCls = D.tables.reduce((a,t)=>a+t.cols.filter(c=>c.cls).length,0);
+
+document.getElementById("mname").textContent = D.model;
+document.getElementById("mtitle").textContent = D.title;
+document.getElementById("facts").innerHTML = [
+  [D.tables.length,"tables"],[nCols,"columns"],[D.rels.length,"relationships"],[D.views.length,"views"],
+  [D.subject_areas.length,"subject areas"],[terms.size,"business terms"],[D.vv_lists,"valid-value lists"],[nCls,"classification suggestions"],[D.domains.length,"domains"]
+].map(([n,l])=>`<li><b>${n}</b> ${l}</li>`).join("");
+
+// ---------- geometry ----------
+function boxOf(n){
+  const o = byName[n], [x,y] = POS[n];
+  const h = o.kind === "view" ? HDR + 18*(o.sources.length+1) + 12 : HDR + ROW*o.cols.length + 12;
+  return {x,y,w:W,h};
+}
+const B = {}; Object.keys(byName).forEach(n => B[n] = boxOf(n));
+const vbW = Math.max(...Object.values(B).map(b=>b.x+b.w)) + 40;
+const vbH = Math.max(...Object.values(B).map(b=>b.y+b.h)) + 40;
+const svg = document.getElementById("dg");
+svg.setAttribute("viewBox", `0 0 ${vbW} ${vbH}`);
+
+// grid
+const defs = el("defs",{},svg);
+const pat = el("pattern",{id:"g",width:20,height:20,patternUnits:"userSpaceOnUse"},defs);
+el("path",{d:"M20 0H0V20",fill:"none",stroke:css("--grid"),"stroke-width":1},pat);
+el("rect",{x:0,y:0,width:vbW,height:vbH,fill:"url(#g)"},svg);
+
+const gEdges = el("g",{},svg), gEnts = el("g",{},svg), gLabels = el("g",{},svg);
+
+// side selection per relationship end
+function sides(a,b){
+  const A=B[a], Bb=B[b];
+  if (Bb.x >= A.x+A.w+30) return ["R","L"];
+  if (A.x >= Bb.x+Bb.w+30) return ["L","R"];
+  return (Bb.y > A.y) ? ["B","T"] : ["T","B"];
+}
+const ends = [];
+D.rels.forEach((r,i) => {
+  if (r.parent === r.child) return;
+  const [sp, sc] = sides(r.parent, r.child);
+  ends.push({rel:i, box:r.parent, side:sp, other:r.child, role:"p"});
+  ends.push({rel:i, box:r.child, side:sc, other:r.parent, role:"c"});
+});
+// spread ends sharing a side
+const groups = {};
+ends.forEach(e => (groups[e.box+e.side] ??= []).push(e));
+Object.values(groups).forEach(list => {
+  const vert = list[0].side === "L" || list[0].side === "R";
+  const ctr = n => vert ? B[n].y + B[n].h/2 : B[n].x + B[n].w/2;
+  list.sort((p,q) => ctr(p.other) - ctr(q.other));
+  const b = B[list[0].box];
+  list.forEach((e,k) => {
+    const f = (k+1)/(list.length+1);
+    const o = B[e.other];
+    let x, y;
+    if (vert){
+      // keep straight when the boxes overlap vertically and only one edge uses this side
+      const ov0 = Math.max(b.y+HDR, o.y+HDR), ov1 = Math.min(b.y+b.h, o.y+o.h);
+      y = (list.length === 1 && ov1-ov0 > 30) ? (ov0+ov1)/2 : b.y + HDR + (b.h-HDR)*f;
+      x = e.side === "R" ? b.x+b.w : b.x;
+    } else {
+      x = b.x + b.w*(0.3 + 0.4*f);
+      y = e.side === "B" ? b.y+b.h : b.y;
+    }
+    e.pt = [x,y];
+  });
+});
+const N = {L:[-1,0],R:[1,0],T:[0,-1],B:[0,1]};
+
+function bez(p0,c0,c1,p1,t){ const u=1-t; return [0,1].map(i=>u*u*u*p0[i]+3*u*u*t*c0[i]+3*u*t*t*c1[i]+t*t*t*p1[i]); }
+const edgeEls = [];
+D.rels.forEach((r,i) => {
+  const child = byName[r.child];
+  const pkCols = child.cols.filter(c=>c.pk).map(c=>c.name);
+  r.identifying = r.child_columns.length > 0 && r.child_columns.every(c => pkCols.includes(c));
+  const g = el("g",{class:"edge"+(r.identifying?"":" nonid"),"data-rel":i},gEdges);
+  let p0,p1,n0,n1,d,mid;
+  if (r.parent === r.child){
+    const b = B[r.parent];
+    p0 = [b.x, b.y+HDR+40]; p1 = [b.x, b.y+HDR+110]; n0=N.L; n1=N.L;
+    d = `M${p0} C${p0[0]-60},${p0[1]} ${p1[0]-60},${p1[1]} ${p1}`;
+    mid = [b.x-48, (p0[1]+p1[1])/2];
+  } else {
+    const ep = ends.find(e=>e.rel===i&&e.role==="p"), ec = ends.find(e=>e.rel===i&&e.role==="c");
+    p0 = ep.pt; p1 = ec.pt; n0 = N[ep.side]; n1 = N[ec.side];
+    const dist = Math.hypot(p1[0]-p0[0], p1[1]-p0[1]);
+    const k = Math.max(30, dist*0.42);
+    const c0 = [p0[0]+n0[0]*k, p0[1]+n0[1]*k], c1 = [p1[0]+n1[0]*k, p1[1]+n1[1]*k];
+    d = `M${p0} C${c0} ${c1} ${p1}`;
+    mid = bez(p0,c0,c1,p1,0.5);
+  }
+  el("path",{class:"ln",d},g);
+  // parent end: one bar; child end: zero-or-many crow's foot
+  const bar = (p,n,off) => { const t=[-n[1],n[0]]; return `M${p[0]+n[0]*off+t[0]*6},${p[1]+n[1]*off+t[1]*6}L${p[0]+n[0]*off-t[0]*6},${p[1]+n[1]*off-t[1]*6}`; };
+  el("path",{class:"cf",d:bar(p0,n0,9)},g);
+  const t=[-n1[1],n1[0]], q=[p1[0]+n1[0]*13, p1[1]+n1[1]*13];
+  el("path",{class:"cf",d:`M${q}L${p1[0]+t[0]*6},${p1[1]+t[1]*6}M${q}L${p1}M${q}L${p1[0]-t[0]*6},${p1[1]-t[1]*6}`},g);
+  el("circle",{cx:p1[0]+n1[0]*19,cy:p1[1]+n1[1]*19,r:3.2,fill:css("--sheet"),stroke:css("--muted"),"stroke-width":1.2,class:"cf"},g);
+  const lab = el("text",{x:mid[0],y:mid[1]+3.5,"text-anchor":"middle","data-rel":i},gLabels);
+  lab.textContent = r.phrase;
+  lab.classList.add("edgeLabel");
+  const lg = el("g",{class:"edge","data-rel":i},gLabels); lg.appendChild(lab);
+  edgeEls.push({r,g,lg});
+});
+
+// ---------- entities ----------
+const entEls = {};
+Object.keys(byName).forEach(n => {
+  const o = byName[n], b = B[n];
+  const g = el("g",{class:"ent"+(o.kind==="view"?" view":""),tabindex:0,role:"button","aria-label":(o.kind==="view"?"View ":"Table ")+n},gEnts);
+  entEls[n] = g;
+  el("rect",{class:"box",x:b.x,y:b.y,width:b.w,height:b.h,rx:4},g);
+  el("rect",{class:"hd",x:b.x+1,y:b.y+1,width:b.w-2,height:HDR-2,rx:3},g);
+  el("text",{class:"title",x:b.x+10,y:b.y+19},g).textContent = n.length > 30 ? n.slice(0,29)+"…" : n;
+  const meta = el("text",{class:"meta",x:b.x+10,y:b.y+36},g);
+  if (o.kind === "view") meta.textContent = `view · ${o.cols.length} columns`;
+  else {
+    meta.textContent = (o.props["Data Steward"] ? `steward ${o.props["Data Steward"]}` : "no steward") ;
+    let ax = b.x + b.w - 8;
+    [...o.areas.slice(0,3)].reverse().forEach(a => {
+      const tx = el("text",{class:"areaTag",x:ax,y:b.y+36,"text-anchor":"end",fill:css(AREA_VAR[a])},g);
+      tx.textContent = a.toUpperCase(); ax -= a.length*6.6 + 8;
+    });
+  }
+  if (o.kind === "view"){
+    el("text",{class:"meta",x:b.x+10,y:b.y+HDR+16},g).textContent = "built from";
+    o.sources.forEach((s,k) => {
+      const alias = Object.keys(o.aliases).find(a=>o.aliases[a]===s);
+      const t = el("text",{class:"col",x:b.x+18,y:b.y+HDR+16+18*(k+1)},g);
+      t.textContent = s; const ta = el("tspan",{class:"typ",dx:6},t); ta.textContent = alias;
+    });
+    return;
+  }
+  const npk = o.cols.filter(c=>c.pk).length;
+  o.cols.forEach((c,k) => {
+    const y = b.y + HDR + 6 + ROW*k + (k>=npk && npk ? 4 : 0);
+    const row = el("g",{class:"row","data-col":c.name},g);
+    el("rect",{x:b.x+2,y:y,width:b.w-4,height:ROW},row);
+    if (c.cls){
+      const v = CLS_VAR[c.cls.class];
+      el("circle",{cx:b.x+11,cy:y+ROW/2,r:3.6,fill: v?css(v):"none",stroke: v?"none":css("--review"),"stroke-width":1.4},row);
+    }
+    const t = el("text",{class:"col"+(c.pk?" pk":""),x:b.x+20,y:y+13.5},row);
+    t.textContent = c.name.length > 22 ? c.name.slice(0,21)+"…" : c.name;
+    const tags = [c.pk?"PK":"", c.fk?"FK":""].filter(Boolean).join(" ");
+    const typ = el("text",{class:"typ",x:b.x+b.w-8,y:y+13.5,"text-anchor":"end"},row);
+    typ.textContent = c.type.toLowerCase().replace("varchar","vchar");
+    let tx = b.x + b.w - 8 - typ.textContent.length*6.4 - 6;
+    if (tags){ const k2 = el("text",{class:"key",x:tx,y:y+13.5,"text-anchor":"end"},row); k2.textContent = tags; tx -= tags.length*6 + 6; }
+    if (c.vv){ const v2 = el("text",{class:"vv",x:tx,y:y+13.5,"text-anchor":"end"},row); v2.textContent = "VV"; }
+    const ti = el("title",{},row); ti.textContent = `${c.attr} — ${c.def||"no definition"}`;
+  });
+  if (npk) el("line",{class:"div",x1:b.x,x2:b.x+b.w,y1:b.y+HDR+6+ROW*npk+2,y2:b.y+HDR+6+ROW*npk+2},g);
+});
+
+// ---------- interaction ----------
+let selected = D.default_selected, area = "All", hl = "None", selCol = null;
+
+function relsOf(n){ return D.rels.map((r,i)=>[r,i]).filter(([r])=>r.parent===n||r.child===n); }
+
+function applyState(){
+  const hot = new Set(selected && byName[selected].kind==="table" ? relsOf(selected).map(([,i])=>i) : []);
+  edgeEls.forEach(({g,lg},i)=>{ g.classList.toggle("hot",hot.has(i)); lg.classList.toggle("hot",hot.has(i)); });
+  const viewSrc = selected && byName[selected].kind==="view" ? new Set(byName[selected].sources) : null;
+  Object.entries(entEls).forEach(([n,g]) => {
+    const o = byName[n];
+    g.classList.toggle("sel", n===selected || (viewSrc && viewSrc.has(n)));
+    let inArea = area==="All" || (o.kind==="table" ? o.areas.includes(area) : o.sources.some(s=>(byName[s]?.areas||[]).includes(area)));
+    g.classList.toggle("dim", !inArea);
+    g.querySelectorAll(".row").forEach(r => {
+      const c = o.cols.find(x=>x.name===r.dataset.col);
+      let on = (n===selected && r.dataset.col===selCol);
+      if (hl==="Classified") on = on || !!c.cls;
+      if (hl==="Keys") on = on || c.pk || c.fk;
+      if (hl==="No definition") on = on || !c.def;
+      if (hl==="Valid values") on = on || !!c.vv;
+      r.classList.toggle("hl", on);
+    });
+  });
+  edgeEls.forEach(({r,g,lg}) => {
+    const off = area!=="All" && !((byName[r.parent]?.areas||[]).includes(area) && (byName[r.child]?.areas||[]).includes(area));
+    g.classList.toggle("dim",off); lg.classList.toggle("dim",off);
+  });
+  renderInspector();
+}
+
+function clsBadge(c){
+  if (!c) return "";
+  const v = CLS_VAR[c.class];
+  const dot = v ? `<span class="dot" style="background:${css(v)}"></span>` : `<span class="dot" style="border:1.5px solid ${css("--review")}"></span>`;
+  return `<span class="cls">${dot}${esc(c.class || "Needs review")} <span style="color:var(--muted)">· ${esc(c.conf)} confidence, suggested</span></span>`;
+}
+const areaTags = list => list.map(a=>`<span class="tag" style="color:${css(AREA_VAR[a])}">${esc(a)}</span>`).join("");
+const jump = n => `<a class="jump" data-go="${esc(n)}">${esc(n)}</a>`;
+
+function renderInspector(){
+  const o = byName[selected], box = document.getElementById("ins");
+  if (o.kind === "view"){
+    box.innerHTML = `<div class="ins">
+      <h2>${esc(o.name)} <code>view · ${esc(o.entity)}</code></h2>
+      <div><h3>Definition</h3><p class="defn ${o.def?"":"empty"}">${esc(o.def||"No definition in the model")}</p></div>
+      <div><h3>Built from</h3><ul class="plain">${o.sources.map(s=>`<li>${jump(s)} <span class="mono" style="color:var(--muted)">as ${esc(Object.keys(o.aliases).find(a=>o.aliases[a]===s))}</span></li>`).join("")}</ul></div>
+      <div><h3>Joins</h3><ul class="plain mono">${o.joins.map(j=>`<li>${esc(j)}</li>`).join("")}</ul></div>
+      <div><h3>Columns (${o.cols.length})</h3><div class="cols">${o.cols.map(c=>`
+        <div class="c"><div class="nm">${esc(c.name)}</div><div class="ty">${esc(c.sql)}</div>
+        <div class="sub"><span class="d">${esc(c.def||"—")}</span>${c.term?`<span>Term: ${esc(c.term)}</span>`:""}</div></div>`).join("")}</div></div>
+    </div>`;
+  } else {
+    const rels = relsOf(o.name).map(([r]) => {
+      const s = r.parent===r.child ? `${jump(r.parent)} <i>${esc(r.phrase)}</i> ${jump(r.child)}` :
+        r.parent===o.name ? `${esc(o.name)} <i>${esc(r.phrase)}</i> ${jump(r.child)}` : `${jump(r.parent)} <i>${esc(r.phrase)}</i> ${esc(o.name)}`;
+      return `<li>${s} <span class="mono" style="color:var(--muted)">${esc(r.name)} · ${r.identifying?"identifying":"non-identifying"} · ${esc(r.child_columns.join(", "))}</span></li>`;
+    }).join("");
+    const props = Object.entries(o.props);
+    box.innerHTML = `<div class="ins">
+      <h2>${esc(o.name)} <code>entity ${esc(o.entity)}</code></h2>
+      <div><h3>Definition</h3><p class="defn ${o.def?"":"empty"}">${esc(o.def||"No definition in the model")}</p></div>
+      <dl class="kv">
+        <dt>Business term</dt><dd>${esc(o.term||"—")}${o.abbr?` <span class="mono" style="color:var(--muted)">(${esc(o.abbr)})</span>`:""}</dd>
+        <dt>Subject areas</dt><dd><span class="tags">${areaTags(o.areas)||"—"}</span></dd>
+        ${props.length ? props.map(([k,v])=>`<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join("") : `<dt>Properties</dt><dd class="empty">none set</dd>`}
+      </dl>
+      <div><h3>Keys</h3><ul class="plain">${o.keys.map(k=>`<li><span class="k">${esc(k.type)}</span> <span class="mono">${esc(k.columns.join(", "))}</span></li>`).join("")}</ul></div>
+      <div><h3>Relationships (${relsOf(o.name).length})</h3><ul class="plain">${rels||'<li class="empty">none</li>'}</ul></div>
+      <div><h3>Columns (${o.cols.length})</h3><div class="cols">${o.cols.map(c=>`
+        <div class="c${c.name===selCol?" hl":""}" id="col-${esc(c.name)}">
+          <div class="nm">${esc(c.name)}${c.pk?'<span class="k">PK</span>':""}${c.fk?'<span class="k">FK</span>':""}</div>
+          <div class="ty">${esc(c.type)}</div>
+          <div class="sub">
+            <span class="d ${c.def?"":"empty"}">${esc(c.def||"No definition")}</span>
+            <span>Logical name: ${esc(c.attr)}${c.term && c.term.toLowerCase()!==c.attr.toLowerCase()?` · Term: ${esc(c.term)}`:""}${c.abbr?` (${esc(c.abbr)})`:""}</span>
+            ${c.cls?clsBadge(c.cls):""}
+            ${c.vv?`<span>Valid values <span class="mono">${esc(c.vv.list)}</span><table class="vvt">${c.vv.values.map(([k,v])=>`<tr><td>${esc(k)}</td><td>${esc(v)}</td></tr>`).join("")}</table></span>`:""}
+          </div>
+        </div>`).join("")}</div></div>
+      <p class="note">Classifications are keyword-based suggestions, not part of the erwin model. Custom properties come from the model's user-defined properties.</p>
+    </div>`;
+  }
+  box.querySelectorAll("[data-go]").forEach(a => a.addEventListener("click", () => select(a.dataset.go)));
+  if (selCol){ const t = document.getElementById("col-"+selCol); if (t) t.scrollIntoView({block:"nearest"}); }
+}
+
+function select(n, col=null){ selected = n; selCol = col; applyState(); }
+Object.entries(entEls).forEach(([n,g]) => {
+  g.addEventListener("click", ev => { const r = ev.target.closest(".row"); select(n, r ? r.dataset.col : null); });
+  g.addEventListener("keydown", ev => { if (ev.key==="Enter"||ev.key===" "){ ev.preventDefault(); select(n); } });
+});
+
+function chips(id, list, get, set, swatch){
+  const host = document.getElementById(id);
+  list.forEach(v => {
+    const b = document.createElement("button"); b.type="button"; b.className="chip"; b.id=`${id}-${v.replace(/\W/g,"")}`;
+    b.innerHTML = (swatch && swatch(v) ? `<span class="sw" style="background:${swatch(v)}"></span>` : "") + esc(v);
+    b.addEventListener("click", () => { set(v); host.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed", x===b)); applyState(); });
+    b.setAttribute("aria-pressed", get()===v);
+    host.appendChild(b);
+  });
+}
+chips("areas", ["All", ...D.subject_areas], ()=>area, v=>area=v, v=>AREA_VAR[v]&&css(AREA_VAR[v]));
+chips("hls", ["None","Classified","Keys","Valid values","No definition"], ()=>hl, v=>hl=v);
+
+// zoom
+const scroller = document.getElementById("scroller");
+function fit(){ svg.style.width = "100%"; svg.style.height = "auto"; }
+function full(){ svg.style.width = vbW+"px"; svg.style.height = vbH+"px"; }
+document.getElementById("zfit").onclick = fit; document.getElementById("z100").onclick = full;
+fit();
+applyState();
+</script>
